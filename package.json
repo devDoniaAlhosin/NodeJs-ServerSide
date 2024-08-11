@@ -10,6 +10,7 @@
     "body-parser": "*",
     "bookstore": "file:",
     "express": "*",
+    "express-validator": "^7.2.0",
     "mongoose": "*"
   },
   "author": "",
