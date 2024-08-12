@@ -1,13 +1,20 @@
-// config/db.js
-var mongoose = require('mongoose');
+var mongoose = require("mongoose");
+require("dotenv").config(); // Load environment variables
 
-mongoose.connect('mongodb://localhost/bookstore', { useNewUrlParser: true, useUnifiedTopology: true });
+const mongoURI =
+  process.env.MONGO_URI ||
+  "mongodb+srv://doniaelhussien:donia123@cluster0.dzxdx.mongodb.net/BookStore?retryWrites=true&w=majority&appName=Cluster0";
 
-var db = mongoose.connection;
+mongoose
+  .connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+  });
 
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function() {
-  console.log('Connected to MongoDB');
-});
-
-module.exports = db;
+module.exports = mongoose;

@@ -1,32 +1,71 @@
-// var express=require('express');
-// var app=express();
-// var bodyParser=require('body-parser');
-// var mongoose=require('mongoose');
+const express = require("express");
+const session = require("express-session");
+const passport = require("passport");
+const path = require("path");
+const cors = require("cors");
+const mongoose = require("./config/db");
+const bookRoutes = require("./routes/bookroutes");
+const usersRouter = require("./routes/users");
+require("dotenv").config;
+const port = process.env.PORT;
+const httpStatuesText = require("./utilities/httpStatusText");
 
-// //connect to Mongoose
-// mongoose.connect('mongodb://localhost/bookstore');
-// var db=mongoose.connection
+const app = express();
 
-// app.get('/',function(req,res){
-// res.send('hello nodemon ');
-// });
+// Cors Middleware
+app.use(cors());
 
-// app.listen(3000)
-// console.log('running on port 3000')
+//image Folder
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-var express = require('express');
-var bodyParser = require('body-parser');
-var db = require('./config/db');  // Import the database connection
-var bookRoutes = require('./routes/bookroutes'); // Import the routes
+// Set a static folder
+app.use(express.static(path.join(__dirname, "client")));
 
-var app = express();
+// Body Parser Middleware for parsing application/json
+app.use(express.json());
 
-app.use(bodyParser.json());
+// Session Middleware
+app.use(
+  session({
+    secret: "secret",
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false },
+  })
+);
+
+// Passport Middleware
+app.use(passport.initialize());
+app.use(passport.session());
+require("./config/passport")(passport);
+
+// Connected to database
+mongoose.connection.on("connected", () => {
+  console.log(`Connected to MongoDB at ${process.env.MONGO_URI}`);
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("Database connection error: " + err);
+});
 
 // Use the routes
-app.use('/', bookRoutes);
+app.use("/api/users", usersRouter); // /api/users
+app.use("/books", bookRoutes);
 
+// Index Route
+app.get("/", (req, res) => {
+  res.send("<h1> Hello Donia's app </h1>");
+});
+
+// 404 Handler Middleware
+
+app.all("*", (req, res, next) => {
+  return res.status(404).json({
+    status: httpStatuesText.ERROR,
+    message: "This Resource is Not Available",
+  });
+});
 // Start the server
-app.listen(3000, function() {
-  console.log('running on port 3000');
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
