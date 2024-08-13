@@ -11,10 +11,10 @@ router.route('/')
 .get(booksController.getallbooks)
     .post( booksValidation(),booksController.addbook)
 
-    // router.get('/genre/:genreId', async (req, res) => {
+    // router.get('books/genre/:genreId', async (req, res) => {
     //     try {
     //         const { genreId } = req.params;
-    //         const books = await Book.find({ genre: genreId }).populate('author').populate('genre');
+    //         const books = await Book.find({ genre: genreId }).populate('Author').populate('Genre');
     //         res.json(books);
     //     } catch (error) {
     //         res.status(500).json({ message: error.message });
@@ -26,4 +26,5 @@ router.route('/:bookID')
 .patch(booksController.updatebook)
 .delete(booksController.deletebook)
 
+// router.get('/books/:bookID', getbook);
 module.exports = router;
