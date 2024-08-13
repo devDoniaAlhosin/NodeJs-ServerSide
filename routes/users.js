@@ -24,6 +24,7 @@ const diskStorage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
+  console.log("File received:", file);
   const imageType = file.mimetype.split("/")[0];
 
   if (imageType === "image") {
@@ -49,6 +50,10 @@ router
 
 // Login
 router.route("/login").post(usersController.login);
+
+// Add a Book  for each user
+
+router.post("/:userId/books", usersController.addOrUpdateBook);
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 // another
 // router.post("/register", async (req, res, next) => {

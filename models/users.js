@@ -2,8 +2,9 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const validator = require("validator");
 const userRoles = require("../utilities/userRoles");
+const Schema = mongoose.Schema;
 // User Schema
-const UserSchema = new mongoose.Schema({
+const UserSchema = new Schema({
   name: {
     type: String,
     required: true,
@@ -35,6 +36,16 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: "uploads/profile.png",
   },
+  books: [
+    {
+      book: { type: Schema.Types.ObjectId, ref: "books" },
+      status: {
+        type: String,
+        enum: ["reading", "finished", "not read"],
+        default: "not read",
+      },
+    },
+  ],
 });
 
 // Create the User model

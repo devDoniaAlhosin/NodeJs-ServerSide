@@ -5,7 +5,7 @@ const appError = require("../utilities/appError");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const generateJWT = require("../utilities/generateJWT");
-
+const Book = require("../models/books");
 // get all users
 const getAllUsers = asyncWrapper(async (req, res) => {
   const query = req.query;
@@ -100,8 +100,45 @@ const login = asyncWrapper(async (req, res, next) => {
   }
 });
 
+// Add A Book For Each User
+addOrUpdateBook = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { bookId, status } = req.body;
+
+    // Find the user and book
+    const user = await User.findById(userId);
+    const book = await Book.findById(bookId);
+
+    if (!user || !book) {
+      return next(appError.create("User or book not found", 404, FAIL));
+    }
+
+    // Check if the book is already in the user's collection
+    const existingBook = user.books.find((b) => b.book.toString() === bookId);
+
+    if (existingBook) {
+      // If the book already exists, update the status
+      existingBook.status = status;
+    } else {
+      // If the book is not in the collection, add it
+      user.books.push({ book: bookId, status });
+    }
+
+    await user.save();
+    res.json({
+      message: "Book added/updated successfully",
+      status: SUCCESS,
+      user,
+    });
+  } catch (error) {
+    console.error(error);
+    return next(appError.create("Server error", 500, ERROR));
+  }
+};
 module.exports = {
   getAllUsers,
   register,
   login,
+  addOrUpdateBook,
 };
