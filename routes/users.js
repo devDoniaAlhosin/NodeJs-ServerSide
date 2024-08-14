@@ -53,6 +53,8 @@ router.route("/login").post(usersController.login);
 
 // Add a Book  for each user
 router.post("/:userId/books/:bookId", usersController.addBookToUser);
-// router.post("/:userId/books", usersController.addOrUpdateBook);
+
+// get all books that a user has rated
+router.route("/:userId/books").get(usersController.getBookToUser);
 
 module.exports = router;

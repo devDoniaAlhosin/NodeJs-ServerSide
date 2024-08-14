@@ -101,7 +101,7 @@ const login = asyncWrapper(async (req, res, next) => {
   }
 });
 
-// Add A Book To User
+// Add UserBooks
 const addBookToUser = asyncWrapper(async (req, res, next) => {
   const { rating, status } = req.body;
   const { userId, bookId } = req.params;
@@ -170,9 +170,26 @@ const addBookToUser = asyncWrapper(async (req, res, next) => {
   });
 });
 
+// Get UsersBooks
+
+const getBookToUser = asyncWrapper(async (req, res, next) => {
+  const userId = req.params.userId;
+
+  // Find the user by ID and populate the book details
+  const user = await User.findById(userId).populate("books.book").exec();
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  // Send the user's books with their ratings and status
+  res.json(user.books);
+});
+
 module.exports = {
   getAllUsers,
   register,
   login,
   addBookToUser,
+  getBookToUser,
 };
