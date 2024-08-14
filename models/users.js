@@ -2,6 +2,9 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const validator = require("validator");
 const userRoles = require("../utilities/userRoles");
+const userStatus = require("../utilities/userStatus");
+const Book = require("../models/books"); // Adjust the path as needed
+const Author = require("../models/authors"); // Adjust the path as needed
 const Schema = mongoose.Schema;
 // User Schema
 const UserSchema = new Schema({
@@ -38,12 +41,14 @@ const UserSchema = new Schema({
   },
   books: [
     {
-      book: { type: Schema.Types.ObjectId, ref: "books" },
+      book: { type: mongoose.Schema.Types.ObjectId, ref: "Book" },
       status: {
         type: String,
-        enum: ["reading", "finished", "not read"],
-        default: "not read",
+        enum: ["reading", "finished", "notread"], // Ensure these match your status enum
+        default: "notread",
       },
+      rating: Number,
+      // Include other fields if needed
     },
   ],
 });

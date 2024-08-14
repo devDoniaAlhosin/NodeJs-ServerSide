@@ -6,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const generateJWT = require("../utilities/generateJWT");
 const Book = require("../models/books");
+const Author = require("../models/authors");
 // get all users
 const getAllUsers = asyncWrapper(async (req, res) => {
   const query = req.query;
@@ -100,45 +101,78 @@ const login = asyncWrapper(async (req, res, next) => {
   }
 });
 
-// Add A Book For Each User
-addOrUpdateBook = async (req, res, next) => {
-  try {
-    const { userId } = req.params;
-    const { bookId, status } = req.body;
+// Add A Book To User
+const addBookToUser = asyncWrapper(async (req, res, next) => {
+  const { rating, status } = req.body;
+  const { userId, bookId } = req.params;
 
-    // Find the user and book
-    const user = await User.findById(userId);
-    const book = await Book.findById(bookId);
+  // Find user by ID
+  const user = await User.findById(userId);
 
-    if (!user || !book) {
-      return next(appError.create("User or book not found", 404, FAIL));
-    }
-
-    // Check if the book is already in the user's collection
-    const existingBook = user.books.find((b) => b.book.toString() === bookId);
-
-    if (existingBook) {
-      // If the book already exists, update the status
-      existingBook.status = status;
-    } else {
-      // If the book is not in the collection, add it
-      user.books.push({ book: bookId, status });
-    }
-
-    await user.save();
-    res.json({
-      message: "Book added/updated successfully",
-      status: SUCCESS,
-      user,
-    });
-  } catch (error) {
-    console.error(error);
-    return next(appError.create("Server error", 500, ERROR));
+  if (!user) {
+    return next(appError.create("User not found", 404, httpStatusText.FAIL));
   }
-};
+
+  const book = await Book.findById(bookId)
+    .populate("author")
+    .populate("genre")
+    .exec();
+
+  if (!book) {
+    return next(appError.create("Book not found", 404, httpStatusText.ERROR));
+  }
+
+  const existingBookIndex = user.books.findIndex(
+    (b) => b.book.toString() === bookId
+  );
+
+  if (existingBookIndex !== -1) {
+    // If the book already exists, update the status and rating
+    user.books[existingBookIndex].status =
+      status || user.books[existingBookIndex].status;
+    user.books[existingBookIndex].rating =
+      rating || user.books[existingBookIndex].rating;
+  } else {
+    // If the book is not in the collection, add it
+    const bookDetails = {
+      book: book._id,
+      status: status || userStatus.NOTREAD,
+      rating: rating || 0,
+      title: book.title,
+      description: book.description,
+      published: book.published,
+      bookRating: book.rating,
+      reviews_count: book.reviews_count,
+      isbn: book.isbn,
+      image: book.image,
+    };
+    if (existingBookIndex !== -1) {
+      user.books[existingBookIndex] = bookDetails;
+    } else {
+      user.books.push(bookDetails);
+    }
+  }
+
+  console.log("Book Before Save:", book);
+  await user.save();
+
+  // Populate user.books with detailed book information
+  const populatedUser = await User.findById(userId)
+    .populate({
+      path: "books.book",
+      select: "title description published rating reviews_count isbn image",
+    })
+    .exec();
+
+  res.status(200).json({
+    status: "success",
+    data: populatedUser.books,
+  });
+});
+
 module.exports = {
   getAllUsers,
   register,
   login,
-  addOrUpdateBook,
+  addBookToUser,
 };
