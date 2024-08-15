@@ -118,13 +118,25 @@ const addBookToUser = asyncWrapper(async (req, res, next) => {
     .populate("genre")
     .exec();
 
-  if (!book) {
-    return next(appError.create("Book not found", 404, httpStatusText.ERROR));
-  }
-
+  // If book is not found, remove it from user's collection if it exists
   const existingBookIndex = user.books.findIndex(
-    (b) => b.book.toString() === bookId
+    (b) => b.book && b.book.toString() === bookId
   );
+
+  // If book is not found, remove it from user's collection if it exists
+  if (!book) {
+    if (existingBookIndex !== -1) {
+      user.books.splice(existingBookIndex, 1); // Remove the book from the array
+      await user.save(); // Save the user with the updated books array
+    }
+    return next(
+      appError.create(
+        "Book not found and removed from user's collection",
+        404,
+        httpStatusText.ERROR
+      )
+    );
+  }
 
   if (existingBookIndex !== -1) {
     // If the book already exists, update the status and rating
@@ -146,11 +158,7 @@ const addBookToUser = asyncWrapper(async (req, res, next) => {
       isbn: book.isbn,
       image: book.image,
     };
-    if (existingBookIndex !== -1) {
-      user.books[existingBookIndex] = bookDetails;
-    } else {
-      user.books.push(bookDetails);
-    }
+    user.books.push(bookDetails);
   }
 
   console.log("Book Before Save:", book);
@@ -171,18 +179,20 @@ const addBookToUser = asyncWrapper(async (req, res, next) => {
 });
 
 // Get UsersBooks
-
 const getBookToUser = asyncWrapper(async (req, res, next) => {
   const userId = req.params.userId;
 
-  // Find the user by ID and populate the book details
+ 
   const user = await User.findById(userId).populate("books.book").exec();
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  // Send the user's books with their ratings and status
+
+  user.books = user.books.filter((b) => b.book !== null);
+
+
   res.json(user.books);
 });
 

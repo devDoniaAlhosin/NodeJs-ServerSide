@@ -3,12 +3,20 @@ const session = require("express-session");
 const passport = require("passport");
 const path = require("path");
 const cors = require("cors");
-const mongoose = require("./config/db");
+// const mongoose = require("./config/db");
 const bookRoutes = require("./routes/bookroutes");
 const usersRouter = require("./routes/users");
 require("dotenv").config;
 const port = process.env.PORT;
+const mongoose = require("./config/db");
 const httpStatuesText = require("./utilities/httpStatusText");
+const { body, validationResult } = require("express-validator");
+const bookController = require("./controllers/booksController");
+const authorsController = require("./controllers/authorsController");
+const genresConttroller = require("./controllers/genresController");
+const booksrouters = require("./routes/bookroutes");
+const authorsrouters = require("./routes/authors.route");
+const genresrouters = require("./routes/genre.route");
 
 const app = express();
 
@@ -48,9 +56,14 @@ mongoose.connection.on("error", (err) => {
   console.error("Database connection error: " + err);
 });
 
+const bodyParser = require("body-parser");
+app.use(bodyParser.json());
+
 // Use the routes
 app.use("/api/users", usersRouter); // /api/users
-app.use("/books", bookRoutes);
+app.use("/api/books", booksrouters);
+app.use("/api/authors", authorsrouters);
+app.use("/api/genres", genresrouters);
 
 // Index Route
 app.get("/", (req, res) => {
