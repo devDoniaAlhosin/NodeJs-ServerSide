@@ -4,7 +4,7 @@ const Book = require("../models/books");
 const authorSchema = new mongoose.Schema({
   name: { type: String, required: true },
   bio: { type: String },
-  birthDate: { type: Date, required: true },
+  birthDate: { type: String, required: true },
   nationality: { type: String },
   image: { type: String },
   books: [{ type: mongoose.Schema.Types.ObjectId, ref: "Book" }],

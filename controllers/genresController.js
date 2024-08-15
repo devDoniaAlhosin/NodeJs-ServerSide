@@ -52,15 +52,28 @@ const getallgenres = asyncWrapper(async (req, res) => {
 });
 
 //Single Genre
-const getgenre = asyncWrapper(async (req, res, next) => {
-  console.log(req.params);
-  const genre = await Genre.findById(req.params.genreId).populate("books");
-  console.log(req.params.genreId);
+const getgenre = asyncWrapper(async (req, res) => {
+  const genreId = req.params.genreId;
+  console.log(`Fetching genre with ID: ${genreId}`);
 
-  if (!genre) {
-    return res.status(404).json({ msg: "Genre not found" });
+  if (!mongoose.Types.ObjectId.isValid(genreId)) {
+    return res.status(400).json({ msg: "Invalid genre ID format" });
   }
-  return res.status(200).json(genre);
+
+  try {
+    const genre = await Genre.findById(genreId).populate("books");
+
+    if (!genre) {
+      console.log(`Genre with ID ${genreId} not found`);
+      return res.status(404).json({ msg: "Genre not found" });
+    }
+
+    console.log(`Found genre: ${JSON.stringify(genre)}`);
+    res.status(200).json(genre);
+  } catch (error) {
+    console.error(`Error fetching genre: ${error.message}`);
+    res.status(500).json({ msg: "Server error", error: error.message });
+  }
 });
 
 //Add genre
