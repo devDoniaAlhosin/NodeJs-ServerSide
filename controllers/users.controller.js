@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const generateJWT = require("../utilities/generateJWT");
 const Book = require("../models/books");
 const Author = require("../models/authors");
+const passport = require("../config/passport");
 // get all users
 const getAllUsers = asyncWrapper(async (req, res) => {
   const query = req.query;
@@ -126,8 +127,8 @@ const addBookToUser = asyncWrapper(async (req, res, next) => {
   // If book is not found, remove it from user's collection if it exists
   if (!book) {
     if (existingBookIndex !== -1) {
-      user.books.splice(existingBookIndex, 1); // Remove the book from the array
-      await user.save(); // Save the user with the updated books array
+      user.books.splice(existingBookIndex, 1);
+      await user.save();
     }
     return next(
       appError.create(
@@ -139,17 +140,17 @@ const addBookToUser = asyncWrapper(async (req, res, next) => {
   }
 
   if (existingBookIndex !== -1) {
-    // If the book already exists, update the status and rating
     user.books[existingBookIndex].status =
       status || user.books[existingBookIndex].status;
-    user.books[existingBookIndex].rating =
-      rating || user.books[existingBookIndex].rating;
+
+    if (rating !== undefined && rating !== null) {
+      user.books[existingBookIndex].rating = rating;
+    }
   } else {
-    // If the book is not in the collection, add it
-    const bookDetails = {
+    user.books.push({
       book: book._id,
       status: status || userStatus.NOTREAD,
-      rating: rating || 0,
+      rating: rating !== undefined && rating !== null ? rating : 0,
       title: book.title,
       description: book.description,
       published: book.published,
@@ -157,8 +158,7 @@ const addBookToUser = asyncWrapper(async (req, res, next) => {
       reviews_count: book.reviews_count,
       isbn: book.isbn,
       image: book.image,
-    };
-    user.books.push(bookDetails);
+    });
   }
 
   console.log("Book Before Save:", book);
@@ -182,18 +182,34 @@ const addBookToUser = asyncWrapper(async (req, res, next) => {
 const getBookToUser = asyncWrapper(async (req, res, next) => {
   const userId = req.params.userId;
 
- 
   const user = await User.findById(userId).populate("books.book").exec();
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
 
-
   user.books = user.books.filter((b) => b.book !== null);
 
-
   res.json(user.books);
+});
+
+// Check User Existance
+const checkUserExists = asyncWrapper(async (req, res, next) => {
+  const { userId } = req.params;
+  const user = await User.findById(userId);
+
+  if (!user) {
+    return res.status(404).json({
+      status: "fail",
+      message: "User not found",
+      exists: false,
+    });
+  }
+
+  res.status(200).json({
+    status: "success",
+    exists: true,
+  });
 });
 
 module.exports = {
@@ -202,4 +218,5 @@ module.exports = {
   login,
   addBookToUser,
   getBookToUser,
+  checkUserExists,
 };

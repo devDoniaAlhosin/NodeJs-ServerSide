@@ -65,6 +65,16 @@ app.use("/api/books", booksrouters);
 app.use("/api/authors", authorsrouters);
 app.use("/api/genres", genresrouters);
 
+// Errors Handle Middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+
+  res.status(err.statusCode || 500).json({
+    status: err.statusText || "Error",
+    message: err.message || "Internal Server Error",
+  });
+});
+
 // Index Route
 app.get("/", (req, res) => {
   res.send("<h1> Hello Donia's app </h1>");

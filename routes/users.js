@@ -57,4 +57,7 @@ router.post("/:userId/books/:bookId", usersController.addBookToUser);
 // get all books that a user has rated
 router.route("/:userId/books").get(usersController.getBookToUser);
 
+// Check user Existance
+router.route("/:userId/exists").get(usersController.checkUserExists);
+
 module.exports = router;

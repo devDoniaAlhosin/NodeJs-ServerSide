@@ -7,8 +7,6 @@ const Book = require("../models/books"); // Adjust the path as needed
 const Author = require("../models/authors"); // Adjust the path as needed
 const Schema = mongoose.Schema;
 
-
-
 // User Schema
 const UserSchema = new Schema({
   name: {
@@ -50,13 +48,21 @@ const UserSchema = new Schema({
         enum: ["reading", "finished", "notread"], // Ensure these match your status enum
         default: "notread",
       },
-      rating: Number,
-      //  other fields (Review !!) 
+      rating: {
+        type: Number,
+        min: 0,
+        max: 5,
+      },
+      title: String,
+      description: String,
+      published: Date,
+      avgRating: Number,
+      reviews_count: Number,
+      isbn: String,
+      image: String,
     },
   ],
 });
 
-
 const User = mongoose.model("User", UserSchema);
 module.exports = User;
-
