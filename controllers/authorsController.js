@@ -20,13 +20,23 @@ const getallAuthors = async (req, res) => {
 // One author
 const getauthor = async (req, res) => {
   try {
-    const author = await Author.findById(req.params.authorId);
+    const author = await Author.findById(req.params.authorId).populate({
+      path: "books",
+      select: "title description published rating reviews_count  isbn image",
+    });
+
     if (!author) {
       return res.status(404).json({ msg: "Author not found" });
     }
+
     return res.json(author);
   } catch (err) {
-    return res.status(400).json({ msg: "Invalid Object ID" });
+    // Handle specific error cases
+    if (err.name === "CastError") {
+      return res.status(400).json({ msg: "Invalid Object ID" });
+    }
+    // Handle other unexpected errors
+    return res.status(500).json({ msg: err.message });
   }
 };
 
@@ -98,6 +108,7 @@ const deleteauthor = async (req, res) => {
     });
   }
 };
+
 module.exports = {
   getallAuthors,
   getauthor,
