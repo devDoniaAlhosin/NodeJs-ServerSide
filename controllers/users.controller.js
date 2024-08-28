@@ -48,7 +48,7 @@ const register = asyncWrapper(async (req, res, next) => {
     username,
     password: hashedPassword, // should be hashed First
     role,
-    avatar: req.file.filename,
+    avatar: req.file.location,
   });
 
   // generate JWT token

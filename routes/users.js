@@ -12,6 +12,16 @@ const verifyToken = require("../middleware/verifyToken");
 const appError = require("../utilities/appError");
 const multer = require("multer");
 
+// //////
+const AWS = require("aws-sdk");
+const multerS3 = require("multer-s3");
+// Configure AWS SDK
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY,
+  secretAccessKey: process.env.AWS_SECRET_KEY,
+  region: process.env.AWS_REGION,
+});
+
 const diskStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads");
@@ -34,8 +44,22 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+// const upload = multer({
+//   storage: diskStorage,
+//   fileFilter,
+// });
+// Configure multer to use S3
 const upload = multer({
-  storage: diskStorage,
+  storage: multerS3({
+    s3: s3,
+    bucket: "your-s3-bucket-name",
+    acl: "public-read",
+    key: function (req, file, cb) {
+      const ext = file.mimetype.split("/")[1];
+      const fileName = `user-${Date.now()}.${ext}`;
+      cb(null, `uploads/${fileName}`);
+    },
+  }),
   fileFilter,
 });
 
