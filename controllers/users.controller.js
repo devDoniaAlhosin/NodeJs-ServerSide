@@ -12,6 +12,7 @@ const passport = require("../config/passport");
 const { PassThrough } = require("stream");
 const cloudinary = require("../utilities/cloudinary");
 const upload = require("../middleware/multer");
+
 // get all users
 const getAllUsers = asyncWrapper(async (req, res) => {
   const query = req.query;
@@ -100,6 +101,7 @@ const register = asyncWrapper(async (req, res, next) => {
             },
             (error, result) => {
               if (error) {
+                console.error("Cloudinary upload error:", error);
                 return reject(error);
               }
               resolve(result);
@@ -115,6 +117,7 @@ const register = asyncWrapper(async (req, res, next) => {
       const result = await streamUpload(stream);
       avatarUrl = result.secure_url;
     } catch (error) {
+      console.error("Image upload failed:", error);
       return next(appError.create("Image upload failed", 500));
     }
   }
