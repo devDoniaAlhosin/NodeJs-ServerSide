@@ -3,6 +3,20 @@ const mongoose = require("mongoose");
 const Author = require("../models/authors");
 const Genre = require("../models/genres");
 
+const ratingSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  rating: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 5,
+  },
+});
+
 const bookSchema = new mongoose.Schema({
   title: { type: String, required: true },
   author: [
@@ -48,7 +62,6 @@ bookSchema.post("save", async function (doc, next) {
 // Middleware to handle deletion of a book
 bookSchema.pre("remove", async function (next) {
   try {
-    // Remove the book from the author's books array
     await Author.findByIdAndUpdate(this.author, { $pull: { books: this._id } });
     next();
   } catch (err) {

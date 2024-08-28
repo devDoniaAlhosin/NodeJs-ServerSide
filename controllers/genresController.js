@@ -47,7 +47,16 @@ const addBooksToGenre = asyncWrapper(async (req, res, next) => {
 });
 //All Genres
 const getallgenres = asyncWrapper(async (req, res) => {
-  const genres = await Genre.find().populate("books");
+  const genres = await Genre.find().populate({
+    path: "books",
+    populate: [
+      {
+        path: "author",
+        select: "name bio  birthDate nationality  image  books",
+      },
+      { path: "genre", select: "name description" },
+    ],
+  });
   res.json(genres);
 });
 

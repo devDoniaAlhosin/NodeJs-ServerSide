@@ -119,12 +119,10 @@ const addBookToUser = asyncWrapper(async (req, res, next) => {
     .populate("genre")
     .exec();
 
-  // If book is not found, remove it from user's collection if it exists
   const existingBookIndex = user.books.findIndex(
     (b) => b.book && b.book.toString() === bookId
   );
 
-  // If book is not found, remove it from user's collection if it exists
   if (!book) {
     if (existingBookIndex !== -1) {
       user.books.splice(existingBookIndex, 1);
@@ -161,10 +159,8 @@ const addBookToUser = asyncWrapper(async (req, res, next) => {
     });
   }
 
-  console.log("Book Before Save:", book);
   await user.save();
 
-  // Populate user.books with detailed book information
   const populatedUser = await User.findById(userId)
     .populate({
       path: "books.book",
