@@ -26,8 +26,8 @@ app.use(cors());
 //image Folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Set a static folder
-app.use(express.static(path.join(__dirname, "client")));
+// // Set a static folder
+// app.use(express.static(path.join(__dirname, "client")));
 
 // Body Parser Middleware for parsing application/json
 app.use(express.json());
@@ -77,7 +77,7 @@ app.use((err, req, res, next) => {
 
 // Index Route
 app.get("/", (req, res) => {
-  res.send("<h1> Hello Donia's app </h1>");
+  res.send("<h1> Hello From Backend </h1>");
 });
 
 // 404 Handler Middleware
