@@ -74,16 +74,11 @@ const register = asyncWrapper(async (req, res, next) => {
   const { name, email, username, password, role } = req.body;
 
   // Check if user already exists
-  const oldUserEmail = await User.findOne({ email: email });
-  const oldUserUsername = await User.findOne({ username: username });
+  const oldUserEmail = await User.findOne({ email });
+  const oldUserUsername = await User.findOne({ username });
 
   if (oldUserEmail || oldUserUsername) {
-    const error = appError.create(
-      "User already exists",
-      400,
-      httpStatusText.FAIL
-    );
-    return next(error);
+    return next(appError.create("User already exists", 400));
   }
 
   // Password hashing
@@ -93,18 +88,20 @@ const register = asyncWrapper(async (req, res, next) => {
 
   if (req.file) {
     try {
-      // Create a PassThrough stream
       const streamUpload = (stream) => {
         return new Promise((resolve, reject) => {
-          console.log("Creating Cloudinary upload stream...");
           const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: "avatars" },
+            {
+              folder: "avatars",
+              transformation: [
+                { width: 500, height: 500, crop: "limit" },
+                { fetch_format: "auto", quality: "auto" },
+              ],
+            },
             (error, result) => {
               if (error) {
-                console.error("Cloudinary upload error:", error);
                 return reject(error);
               }
-              console.log("Cloudinary upload result:", result);
               resolve(result);
             }
           );
@@ -113,13 +110,11 @@ const register = asyncWrapper(async (req, res, next) => {
       };
 
       // Use PassThrough stream to handle file upload
-      console.log("Starting file upload...");
       const stream = new PassThrough();
+      stream.end(req.file.buffer); // Pipe the buffer to the PassThrough stream
       const result = await streamUpload(stream);
-      console.log("File uploaded successfully:", result.secure_url);
       avatarUrl = result.secure_url;
     } catch (error) {
-      console.error("Image upload failed:", error);
       return next(appError.create("Image upload failed", 500));
     }
   }
@@ -144,9 +139,7 @@ const register = asyncWrapper(async (req, res, next) => {
 
   await newUser.save();
 
-  res
-    .status(201)
-    .json({ status: httpStatusText.SUCCESS, data: { user: newUser } });
+  res.status(201).json({ status: "success", data: { user: newUser } });
 });
 
 // login

@@ -40,7 +40,7 @@ const fileFilter = (req, file, cb) => {
   const imageType = file.mimetype.split("/")[0];
   const maxSize = 5 * 1024 * 1024; // 5 MB
 
-  if (file.size > maxSize) {
+  if (file.buffer.length > maxSize) {
     return cb(appError.create("File size exceeds 5MB", 400), false);
   }
 
