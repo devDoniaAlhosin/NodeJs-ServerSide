@@ -11,7 +11,7 @@ const passport = require("../config/passport");
 // ////
 const { PassThrough } = require("stream");
 const cloudinary = require("../utilities/cloudinary");
-const multer = require("multer");
+const upload = require("../middleware/multer");
 // get all users
 const getAllUsers = asyncWrapper(async (req, res) => {
   const query = req.query;
@@ -110,10 +110,13 @@ const register = asyncWrapper(async (req, res, next) => {
       };
 
       // Use PassThrough stream to handle file upload
+      console.log("Starting file upload...");
       const stream = new PassThrough();
       const result = await streamUpload(stream);
+      console.log("File uploaded successfully:", result.secure_url);
       avatarUrl = result.secure_url;
     } catch (error) {
+      console.error("Image upload failed:", error);
       return next(appError.create("Image upload failed", 500));
     }
   }

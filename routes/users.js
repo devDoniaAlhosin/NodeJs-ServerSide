@@ -38,15 +38,7 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   storage: multerMemoryStorage,
-  fileFilter: (req, file, cb) => {
-    console.log("File received:", file);
-    const imageType = file.mimetype.split("/")[0];
-    if (imageType === "image") {
-      return cb(null, true);
-    } else {
-      return cb(appError.create("File must be an image", 400), false);
-    }
-  },
+  fileFilter: fileFilter,
 });
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 // get all users
