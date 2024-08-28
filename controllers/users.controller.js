@@ -72,77 +72,89 @@ const getAllUsers = asyncWrapper(async (req, res) => {
 // });
 
 const register = asyncWrapper(async (req, res, next) => {
-  const { name, email, username, password, role } = req.body;
+  try {
+    const { name, email, username, password, role } = req.body;
 
-  // Check if user already exists
-  const oldUserEmail = await User.findOne({ email });
-  const oldUserUsername = await User.findOne({ username });
+    // Check if user already exists
+    const oldUserEmail = await User.findOne({ email });
+    const oldUserUsername = await User.findOne({ username });
 
-  if (oldUserEmail || oldUserUsername) {
-    return next(appError.create("User already exists", 400));
-  }
-
-  // Password hashing
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  let avatarUrl = null;
-
-  if (req.file) {
-    try {
-      const streamUpload = (stream) => {
-        return new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            {
-              folder: "avatars",
-              transformation: [
-                { width: 500, height: 500, crop: "limit" },
-                { fetch_format: "auto", quality: "auto" },
-              ],
-            },
-            (error, result) => {
-              if (error) {
-                console.error("Cloudinary upload error:", error);
-                return reject(error);
-              }
-              resolve(result);
-            }
-          );
-          stream.pipe(uploadStream);
-        });
-      };
-
-      // Use PassThrough stream to handle file upload
-      const stream = new PassThrough();
-      stream.end(req.file.buffer); // Pipe the buffer to the PassThrough stream
-      const result = await streamUpload(stream);
-      avatarUrl = result.secure_url;
-    } catch (error) {
-      console.error("Image upload failed:", error);
-      return next(appError.create("Image upload failed", 500));
+    if (oldUserEmail || oldUserUsername) {
+      return next(appError.create("User already exists", 400));
     }
+
+    // Password hashing
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    let avatarUrl = null;
+
+    if (req.file) {
+      const maxSize = 5 * 1024 * 1024; // 5 MB
+
+      // Check file size here
+      if (req.file.buffer.length > maxSize) {
+        return next(appError.create("File size exceeds 5MB", 400));
+      }
+
+      try {
+        // Create a PassThrough stream
+        const streamUpload = (stream) => {
+          return new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              {
+                folder: "avatars",
+                transformation: [
+                  { width: 500, height: 500, crop: "limit" },
+                  { fetch_format: "auto", quality: "auto" },
+                ],
+              },
+              (error, result) => {
+                if (error) {
+                  return reject(error);
+                }
+                resolve(result);
+              }
+            );
+            stream.pipe(uploadStream);
+          });
+        };
+
+        // Use PassThrough stream to handle file upload
+        const stream = new PassThrough();
+        stream.end(req.file.buffer); // Pipe the buffer to the PassThrough stream
+        const result = await streamUpload(stream);
+        avatarUrl = result.secure_url;
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        return next(appError.create("Image upload failed", 500));
+      }
+    }
+
+    // Create new user
+    const newUser = new User({
+      name,
+      email,
+      username,
+      password: hashedPassword,
+      role,
+      avatar: avatarUrl, // Save Cloudinary URL
+    });
+
+    // Generate JWT token
+    const token = await generateJWT({
+      username: newUser.username,
+      id: newUser._id,
+      role: newUser.role,
+    });
+    newUser.token = token;
+
+    await newUser.save();
+
+    res.status(201).json({ status: "success", data: { user: newUser } });
+  } catch (error) {
+    console.error("Error in register function:", error);
+    next(error);
   }
-
-  // Create new user
-  const newUser = new User({
-    name,
-    email,
-    username,
-    password: hashedPassword,
-    role,
-    avatar: avatarUrl, // Save Cloudinary URL
-  });
-
-  // Generate JWT token
-  const token = await generateJWT({
-    username: newUser.username,
-    id: newUser._id,
-    role: newUser.role,
-  });
-  newUser.token = token;
-
-  await newUser.save();
-
-  res.status(201).json({ status: "success", data: { user: newUser } });
 });
 
 // login
