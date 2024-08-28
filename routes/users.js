@@ -25,14 +25,29 @@ const diskStorage = multer.diskStorage({
   },
 });
 
+// const fileFilter = (req, file, cb) => {
+//   console.log("File received:", file);
+//   const imageType = file.mimetype.split("/")[0];
+
+//   if (imageType === "image") {
+//     return cb(null, true);
+//   } else {
+//     return cb(appError.create("file must be an image", 400), false);
+//   }
+// };
 const fileFilter = (req, file, cb) => {
   console.log("File received:", file);
   const imageType = file.mimetype.split("/")[0];
+  const maxSize = 5 * 1024 * 1024; // 5 MB
+
+  if (file.size > maxSize) {
+    return cb(appError.create("File size exceeds 5MB", 400), false);
+  }
 
   if (imageType === "image") {
     return cb(null, true);
   } else {
-    return cb(appError.create("file must be an image", 400), false);
+    return cb(appError.create("File must be an image", 400), false);
   }
 };
 

@@ -96,12 +96,15 @@ const register = asyncWrapper(async (req, res, next) => {
       // Create a PassThrough stream
       const streamUpload = (stream) => {
         return new Promise((resolve, reject) => {
+          console.log("Creating Cloudinary upload stream...");
           const uploadStream = cloudinary.uploader.upload_stream(
             { folder: "avatars" },
             (error, result) => {
               if (error) {
+                console.error("Cloudinary upload error:", error);
                 return reject(error);
               }
+              console.log("Cloudinary upload result:", result);
               resolve(result);
             }
           );
