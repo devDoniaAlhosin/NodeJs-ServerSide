@@ -8,6 +8,9 @@ const generateJWT = require("../utilities/generateJWT");
 const Book = require("../models/books");
 const Author = require("../models/authors");
 const passport = require("../config/passport");
+// ////
+const cloudinary = require("../config/cloudinary");
+const multer = require("multer");
 // get all users
 const getAllUsers = asyncWrapper(async (req, res) => {
   const query = req.query;
@@ -25,13 +28,55 @@ const getAllUsers = asyncWrapper(async (req, res) => {
 });
 
 // register
+// const register = asyncWrapper(async (req, res, next) => {
+//   const { name, email, username, password, role, avatar } = req.body;
+//   const oldUserEmail = await User.findOne({ email: email });
+//   const oldUserUsername = await User.findOne({ username: username });
+//   if (oldUserEmail || oldUserUsername) {
+//     const error = appError.create(
+//       "user already exists",
+//       400,
+//       httpStatusText.FAIL
+//     );
+//     return next(error);
+//   }
+
+//   // Password hashing
+//   const hashedPassword = await bcrypt.hash(password, 10);
+
+//   // adding user
+//   const newUser = new User({
+//     name,
+//     email,
+//     username,
+//     password: hashedPassword, // should be hashed First
+//     role,
+//     avatar: req.file.filename,
+//   });
+
+//   // generate JWT token
+//   const token = await generateJWT({
+//     username: newUser.username,
+//     id: newUser._id,
+//     role: newUser.role,
+//   });
+//   newUser.token = token;
+
+//   await newUser.save();
+
+//   res
+//     .status(201)
+//     .json({ status: httpStatusText.SUCCESS, data: { user: newUser } });
+// });
+
 const register = asyncWrapper(async (req, res, next) => {
-  const { name, email, username, password, role, avatar } = req.body;
+  const { name, email, username, password, role } = req.body;
   const oldUserEmail = await User.findOne({ email: email });
   const oldUserUsername = await User.findOne({ username: username });
+
   if (oldUserEmail || oldUserUsername) {
     const error = appError.create(
-      "user already exists",
+      "User already exists",
       400,
       httpStatusText.FAIL
     );
@@ -41,17 +86,36 @@ const register = asyncWrapper(async (req, res, next) => {
   // Password hashing
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // adding user
+  let avatarUrl = null;
+  if (req.file) {
+    try {
+      // Upload image to Cloudinary
+      const result = await cloudinary.uploader.upload_stream(
+        { folder: "avatars" },
+        (error, result) => {
+          if (error) {
+            return next(appError.create("Image upload failed", 500));
+          }
+          avatarUrl = result.secure_url;
+        }
+      );
+      req.file.stream.pipe(result);
+    } catch (error) {
+      return next(appError.create("Image upload failed", 500));
+    }
+  }
+
+  // Adding user
   const newUser = new User({
     name,
     email,
     username,
-    password: hashedPassword, // should be hashed First
+    password: hashedPassword,
     role,
-    avatar: req.file.filename,
+    avatar: avatarUrl, // Save Cloudinary URL
   });
 
-  // generate JWT token
+  // Generate JWT token
   const token = await generateJWT({
     username: newUser.username,
     id: newUser._id,

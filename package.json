@@ -12,6 +12,7 @@
     "bcryptjs": "^2.4.3",
     "body-parser": "*",
     "bookstore": "file:",
+    "cloudinary": "^2.4.0",
     "cors": "*",
     "dotenv": "^16.4.5",
     "express": "*",

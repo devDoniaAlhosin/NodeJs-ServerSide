@@ -11,6 +11,8 @@ const usersController = require("../controllers/users.controller");
 const verifyToken = require("../middleware/verifyToken");
 const appError = require("../utilities/appError");
 const multer = require("multer");
+const cloudinary = require("../config/cloudinary");
+const multerMemoryStorage = multer.memoryStorage();
 
 const diskStorage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -35,10 +37,17 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({
-  storage: diskStorage,
-  fileFilter,
+  storage: multerMemoryStorage,
+  fileFilter: (req, file, cb) => {
+    console.log("File received:", file);
+    const imageType = file.mimetype.split("/")[0];
+    if (imageType === "image") {
+      return cb(null, true);
+    } else {
+      return cb(appError.create("File must be an image", 400), false);
+    }
+  },
 });
-
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 // get all users
 router.route("/").get(verifyToken, usersController.getAllUsers);
