@@ -11,7 +11,7 @@ const usersController = require("../controllers/users.controller");
 const verifyToken = require("../middleware/verifyToken");
 const appError = require("../utilities/appError");
 const multer = require("multer");
-const cloudinary = require("../config/cloudinary");
+const cloudinary = require("../utilities/cloudinary");
 const multerMemoryStorage = multer.memoryStorage();
 
 const diskStorage = multer.diskStorage({
