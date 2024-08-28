@@ -9,7 +9,8 @@ const Book = require("../models/books");
 const Author = require("../models/authors");
 const passport = require("../config/passport");
 // ////
-const cloudinary = require("../config/cloudinary");
+const { PassThrough } = require("stream");
+const cloudinary = require("../utilities/cloudinary");
 const multer = require("multer");
 // get all users
 const getAllUsers = asyncWrapper(async (req, res) => {
@@ -71,6 +72,8 @@ const getAllUsers = asyncWrapper(async (req, res) => {
 
 const register = asyncWrapper(async (req, res, next) => {
   const { name, email, username, password, role } = req.body;
+
+  // Check if user already exists
   const oldUserEmail = await User.findOne({ email: email });
   const oldUserUsername = await User.findOne({ username: username });
 
@@ -87,25 +90,35 @@ const register = asyncWrapper(async (req, res, next) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   let avatarUrl = null;
+
   if (req.file) {
     try {
-      // Upload image to Cloudinary
-      const result = await cloudinary.uploader.upload_stream(
-        { folder: "avatars" },
-        (error, result) => {
-          if (error) {
-            return next(appError.create("Image upload failed", 500));
-          }
-          avatarUrl = result.secure_url;
-        }
-      );
-      req.file.stream.pipe(result);
+      // Create a PassThrough stream
+      const streamUpload = (stream) => {
+        return new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: "avatars" },
+            (error, result) => {
+              if (error) {
+                return reject(error);
+              }
+              resolve(result);
+            }
+          );
+          stream.pipe(uploadStream);
+        });
+      };
+
+      // Use PassThrough stream to handle file upload
+      const stream = new PassThrough();
+      const result = await streamUpload(stream);
+      avatarUrl = result.secure_url;
     } catch (error) {
       return next(appError.create("Image upload failed", 500));
     }
   }
 
-  // Adding user
+  // Create new user
   const newUser = new User({
     name,
     email,
