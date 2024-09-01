@@ -47,11 +47,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 require("./config/passport")(passport);
 
-// Connected to database
-mongoose.connection.on("connected", () => {
-  console.log(`Connected to MongoDB at ${process.env.MONGO_URI}`);
-});
-
 mongoose.connection.on("error", (err) => {
   console.error("Database connection error: " + err);
 });
